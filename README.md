@@ -41,17 +41,10 @@ Sunucuyu başlattıktan sonra tarayıcınızdan interaktif API dökümanına ula
 
 ## 📡 Frontend (Mobil) Entegrasyon Kılavuzu
 
-### 1. Barkod Analizi Endpoint'leri
+### 1. Barkod Analizi Endpoint'i (POST)
 
-Frontend tarafında isteğe göre iki yöntemden biri kullanılabilir:
+Mobil taraf yalnızca okunan barkod numarasını POST gövdesinde gönderir:
 
-#### Yöntem A: GET İsteği (Önerilen)
-```http
-GET /api/v1/products/{barcode}
-```
-**Örnek:** `GET http://localhost:8000/api/v1/products/8690504135913`
-
-#### Yöntem B: POST İsteği
 ```http
 POST /api/v1/products/analyze
 Content-Type: application/json
@@ -60,6 +53,13 @@ Content-Type: application/json
   "barcode": "8690504135913"
 }
 ```
+
+**Canlı URL:** `https://entegre-proje-backend.onrender.com/api/v1/products/analyze`
+
+#### Yanıt Durum Kodları:
+- **`200 OK`**: Ürün bulundu ve başarıyla analiz edildi (`success: true`).
+- **`404 Not Found`**: Bu barkoda ait ürün bulunamadı (`success: false`).
+- **`502 Bad Gateway`**: Dış servis (Open Food Facts) yanıt vermedi (`success: false`).
 
 ---
 

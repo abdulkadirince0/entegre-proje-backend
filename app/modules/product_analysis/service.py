@@ -128,13 +128,18 @@ class ProductAnalysisService:
         barcode = p.get("code") or raw_data.get("code") or ""
         
         # Ürün adı (Türkçe öncelikli)
-        product_name = (
+        raw_name = (
             p.get("product_name_tr")
             or p.get("product_name")
             or p.get("generic_name_tr")
             or p.get("generic_name")
-            or "İsimsiz Ürün"
-        ).strip()
+        )
+        # Eğer ürün adı yoksa ve içindekiler/besin tablosu da bulunmuyorsa bu boş bir taslaktır
+        nutriments = p.get("nutriments", {})
+        if not raw_name and not p.get("ingredients_text") and not nutriments:
+            return None
+
+        product_name = (raw_name or "İsimsiz Ürün").strip()
 
         brand = p.get("brands") or p.get("brand_owner") or None
         quantity = p.get("quantity") or None

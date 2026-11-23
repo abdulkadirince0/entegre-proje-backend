@@ -8,7 +8,7 @@ from unittest.mock import patch, AsyncMock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.main import app, health_check
-from app.modules.product_analysis.router import get_product_by_barcode, analyze_product
+from app.modules.product_analysis.router import analyze_product, get_product_by_barcode_legacy
 from app.modules.product_analysis.schemas import BarcodeAnalysisRequest
 from app.modules.product_analysis.service import ProductAnalysisService
 
@@ -32,7 +32,6 @@ def test_openapi_schema():
     """FastAPI OpenAPI/Swagger şemasının eksiksiz oluşturulduğunu test et."""
     schema = app.openapi()
     assert schema["info"]["title"] is not None
-    assert "/api/v1/products/{barcode}" in schema["paths"]
     assert "/api/v1/products/analyze" in schema["paths"]
     assert "ProductAnalysisResponse" in schema["components"]["schemas"]
     assert "ProductDetail" in schema["components"]["schemas"]
@@ -75,7 +74,7 @@ def test_clean_and_normalize():
 
 
 async def test_get_product_endpoint():
-    """GET /api/v1/products/{barcode} endpoint'inin mock yanıtını test et."""
+    """GET /api/v1/products/{barcode} (legacy/browser) endpoint'ini test et."""
     raw = load_sample_product_data()
     mock_detail = ProductAnalysisService.clean_and_normalize(raw)
 
@@ -84,7 +83,7 @@ async def test_get_product_endpoint():
         new_callable=AsyncMock,
         return_value=mock_detail,
     ):
-        res = await get_product_by_barcode("8690504135913")
+        res = await get_product_by_barcode_legacy("8690504135913")
         assert res.success is True
         assert res.barcode == "8690504135913"
         assert res.data.product_name == "ülker çikolata"
@@ -112,17 +111,20 @@ async def test_post_analyze_endpoint():
 
 
 async def test_product_not_found():
-    """Ürün bulunamadığında success=False ve data=None dönmeli."""
+    """Ürün bulunamadığında HTTP 404 dönmeli ve success=False olmalı."""
     with patch(
         "app.modules.product_analysis.router.ProductAnalysisService.fetch_product_by_barcode",
         new_callable=AsyncMock,
         return_value=None,
     ):
-        res = await get_product_by_barcode("0000000000000")
-        assert res.success is False
-        assert res.data is None
-        assert "bulunamadı" in res.message.lower()
-    print("✓ test_product_not_found başarılı.")
+        req = BarcodeAnalysisRequest(barcode="0000000000000")
+        res = await analyze_product(req)
+        assert res.status_code == 404
+        body = json.loads(res.body.decode("utf-8"))
+        assert body["success"] is False
+        assert body["data"] is None
+        assert "bulunamadı" in body["message"].lower()
+    print("✓ test_product_not_found başarılı (HTTP 404 + success=False doğrulandı).")
 
 
 async def run_all_tests():

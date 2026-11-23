@@ -237,27 +237,12 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     story.append(net_table)
     story.append(Spacer(1, 12))
 
-    # BÖLÜM 3: ENDPOINT'LER VE İSTEK ATMA
-    story.append(Paragraph("3. API İstek Adresleri (Endpoint'ler)", h1_style))
-    story.append(Paragraph("Mobil barkod tarayıcı kameran barkodu okuduğu anda aşağıdaki iki yöntemden birini kullanabilirsin:", body_style))
+    # BÖLÜM 3: ENDPOINT VE İSTEK ATMA
+    story.append(Paragraph("3. API İstek Formatı (POST Endpoint)", h1_style))
+    story.append(Paragraph("Mobil barkod tarayıcı kameran barkodu okuduğu anda aşağıdaki POST endpoint'ine istek atman yeterlidir:", body_style))
 
-    story.append(Paragraph("Yöntem A: GET İsteği (En Kolay & Önerilen)", h2_style))
-    req_get = (
-        "<b>GET</b> http://&lt;IP_ADRESI&gt;:8000/api/v1/products/{barcode}<br/>"
-        "<b>Örnek:</b> <code>GET http://192.168.1.50:8000/api/v1/products/8690504135913</code>"
-    )
-    t_get = Table([[Paragraph(req_get, code_style)]], colWidths=[515])
-    t_get.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F0FDF4")),
-        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#BBF7D0")),
-        ('PADDING', (0,0), (-1,-1), 6),
-    ]))
-    story.append(t_get)
-    story.append(Spacer(1, 6))
-
-    story.append(Paragraph("Yöntem B: POST İsteği (Alternatif)", h2_style))
     req_post = (
-        "<b>POST</b> http://&lt;IP_ADRESI&gt;:8000/api/v1/products/analyze<br/>"
+        "<b>POST</b> https://entegre-proje-backend.onrender.com/api/v1/products/analyze<br/>"
         "<b>Headers:</b> <code>Content-Type: application/json</code><br/>"
         "<b>Body:</b> <code>{\"barcode\": \"8690504135913\"}</code>"
     )
@@ -265,9 +250,15 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     t_post.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F0FDF4")),
         ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#BBF7D0")),
-        ('PADDING', (0,0), (-1,-1), 6),
+        ('PADDING', (0,0), (-1,-1), 8),
     ]))
     story.append(t_post)
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("<b>Dönen Yanıt Durumları:</b>", body_style))
+    story.append(Paragraph("• <b>200 OK (Ürün Bulundu):</b> <code>{\"success\": true, \"message\": \"...\", \"data\": { ... }}</code>", bullet_style))
+    story.append(Paragraph("• <b>404 Not Found (Ürün Yok):</b> <code>{\"success\": false, \"message\": \"Bu barkoda ait ürün bulunamadı.\", \"data\": null}</code>", bullet_style))
+    story.append(Spacer(1, 8))
 
     story.append(PageBreak())
 
@@ -365,20 +356,24 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     # BÖLÜM 5: FRONTEND KOD ÖRNEĞİ (DART / JAVASCRIPT)
     story.append(Paragraph("5. Örnek Frontend Kodu (Dart / Flutter)", h1_style))
     sample_dart = (
-        "// Flutter / Dart HTTP İstek Fonksiyonu<br/>"
+        "// Flutter / Dart POST İstek Fonksiyonu<br/>"
         "Future&lt;void&gt; fetchProductAnalysis(String barcode) async {<br/>"
-        "  final url = Uri.parse('http://192.168.1.50:8000/api/v1/products/$barcode');<br/>"
-        "  final response = await http.get(url);<br/><br/>"
-        "  if (response.statusCode == 200) {<br/>"
-        "    final jsonBody = json.decode(utf8.decode(response.bodyBytes));<br/>"
-        "    if (jsonBody['success'] == true) {<br/>"
-        "      final product = jsonBody['data'];<br/>"
-        "      print('Ürün: ${product['product_name']}');<br/>"
-        "      print('Nutri-Score: ${product['health_scores']['nutriscore_grade']}');<br/>"
-        "      // UI State güncelle (setState veya Riverpod/Bloc)<br/>"
-        "    } else {<br/>"
-        "      showErrorDialog('Ürün veritabanında bulunamadı.');<br/>"
-        "    }<br/>"
+        "  final url = Uri.parse('https://entegre-proje-backend.onrender.com/api/v1/products/analyze');<br/>"
+        "  final response = await http.post(<br/>"
+        "    url,<br/>"
+        "    headers: {'Content-Type': 'application/json'},<br/>"
+        "    body: json.encode({'barcode': barcode}),<br/>"
+        "  );<br/><br/>"
+        "  final jsonBody = json.decode(utf8.decode(response.bodyBytes));<br/>"
+        "  if (response.statusCode == 200 &amp;&amp; jsonBody['success'] == true) {<br/>"
+        "    final product = jsonBody['data'];<br/>"
+        "    print('Ürün: ${product['product_name']}');<br/>"
+        "    print('Nutri-Score: ${product['health_scores']['nutriscore_grade']}');<br/>"
+        "    // UI State güncelle (setState veya Riverpod/Bloc)<br/>"
+        "  } else {<br/>"
+        "    // HTTP 404 veya success: false durumu<br/>"
+        "    print('Hata: ${jsonBody['message']}');<br/>"
+        "    showErrorDialog(jsonBody['message'] ?? 'Ürün bulunamadı');<br/>"
         "  }<br/>"
         "}"
     )

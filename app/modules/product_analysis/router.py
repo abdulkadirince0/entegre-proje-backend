@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Path, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 import httpx
 
 from app.modules.product_analysis.schemas import (
@@ -13,57 +14,117 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/{barcode}",
+@router.post(
+    "/analyze",
     response_model=ProductAnalysisResponse,
-    summary="Barkod Numarası ile Ürün Analizi (GET)",
+    summary="Barkod Göndererek Ürün Analizi (POST)",
     description=(
-        "Kullanıcının kamera veya barkod okuyucuyla okuttuğu barkod numarasını (örn: 8690504135913) alır. "
-        "Open Food Facts servisinden ürünü çeker; gereksiz ve karmaşık verileri ayıklayarak "
-        "içindekiler, besin değerleri, alerjenler, sağlık puanları (Nutri-Score, NOVA, Eco-Score) "
-        "ve yüksek çözünürlüklü görselleri temiz bir şemada döner."
+        "Kamera veya barkod okuyucudan okutulan barkod numarasını alır. "
+        "Open Food Facts servisinden ürünü sorgulayarak içindekiler, besin değerleri, "
+        "sağlık puanları (Nutri-Score, NOVA), alerjenler ve yüksek çözünürlüklü görselleri temiz veri olarak döner."
     ),
     responses={
         200: {
             "description": "Ürün başarıyla bulundu ve analiz edildi.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Ürün bilgileri başarıyla getirildi ve analiz edildi.",
+                        "barcode": "8690504135913",
+                        "data": {
+                            "barcode": "8690504135913",
+                            "product_name": "Ülker Çikolatalı Gofret",
+                            "brand": "Ülker",
+                            "quantity": "36 g",
+                            "images": {
+                                "front_url": "https://images.openfoodfacts.org/.../front_tr.81.400.jpg",
+                                "ingredients_url": "https://images.openfoodfacts.org/.../ingredients_tr.58.400.jpg",
+                                "nutrition_url": "https://images.openfoodfacts.org/.../nutrition_tr.11.400.jpg"
+                            },
+                            "health_scores": {
+                                "nutriscore_grade": "E",
+                                "nutriscore_description": "Çok düşük besin kalitesi"
+                            }
+                        }
+                    }
+                }
+            }
         },
         404: {
             "description": "Verilen barkod ile eşleşen bir ürün bulunamadı.",
-            "model": ProductAnalysisResponse,
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": False,
+                        "message": "Bu barkoda ait ürün bulunamadı.",
+                        "barcode": "0000000000000",
+                        "data": None
+                    }
+                }
+            }
         },
         502: {
             "description": "Dış servis (Open Food Facts) ile iletişim kurulamadı.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": False,
+                        "message": "Open Food Facts servisine ulaşılamadı.",
+                        "barcode": "8690504135913",
+                        "data": None
+                    }
+                }
+            }
         },
     },
 )
-async def get_product_by_barcode(
-    barcode: str = Path(
-        ...,
-        description="Okutulan barkod numarası (EAN-13, EAN-8 vb.)",
-        examples=["8690504135913"],
-        min_length=4,
-        max_length=20,
-    )
-):
+async def analyze_product(request: BarcodeAnalysisRequest):
+    barcode = request.barcode.strip()
+    if not barcode:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "success": False,
+                "message": "Barkod numarası boş bırakılamaz.",
+                "barcode": "",
+                "data": None,
+            },
+        )
+
     try:
         product_detail = await ProductAnalysisService.fetch_product_by_barcode(barcode)
     except httpx.RequestError as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Open Food Facts servisine ulaşılamadı: {str(exc)}",
+            content={
+                "success": False,
+                "message": f"Open Food Facts servisine ulaşılamadı: {str(exc)}",
+                "barcode": barcode,
+                "data": None,
+            },
         )
     except Exception as exc:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ürün analiz edilirken bir hata oluştu: {str(exc)}",
+            content={
+                "success": False,
+                "message": f"Ürün analiz edilirken bir hata oluştu: {str(exc)}",
+                "barcode": barcode,
+                "data": None,
+            },
         )
 
+    # Ürün bulunamadıysa HTTP 404 döner ve success: false olur!
     if not product_detail:
-        return ProductAnalysisResponse(
-            success=False,
-            message="Bu barkoda ait ürün bulunamadı.",
-            barcode=barcode,
-            data=None,
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "success": False,
+                "message": "Bu barkoda ait ürün bulunamadı.",
+                "barcode": barcode,
+                "data": None,
+            },
         )
 
     return ProductAnalysisResponse(
@@ -74,14 +135,11 @@ async def get_product_by_barcode(
     )
 
 
-@router.post(
-    "/analyze",
+# Tarayıcıdan hızlı URL testi yapmak isteyenler için GET desteği (Swagger dokümanında kalabalık yapmaz)
+@router.get(
+    "/{barcode}",
     response_model=ProductAnalysisResponse,
-    summary="Barkod Göndererek Ürün Analizi (POST)",
-    description=(
-        "JSON gövdesinde `barcode` göndererek ürün analizi yapar. "
-        "Mobil veya frontend tarafında POST isteği atmak istenirse alternatif olarak kullanılır."
-    ),
+    include_in_schema=False,
 )
-async def analyze_product(request: BarcodeAnalysisRequest):
-    return await get_product_by_barcode(barcode=request.barcode)
+async def get_product_by_barcode_legacy(barcode: str):
+    return await analyze_product(BarcodeAnalysisRequest(barcode=barcode))
