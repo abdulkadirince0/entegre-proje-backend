@@ -93,7 +93,10 @@ async def analyze_product(request: BarcodeAnalysisRequest):
         )
 
     try:
-        product_detail = await ProductAnalysisService.fetch_product_by_barcode(barcode)
+        product_detail = await ProductAnalysisService.fetch_product_by_barcode(
+            barcode=barcode,
+            include_raw=request.include_raw,
+        )
     except httpx.RequestError as exc:
         return JSONResponse(
             status_code=status.HTTP_502_BAD_GATEWAY,

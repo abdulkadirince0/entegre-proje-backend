@@ -70,7 +70,21 @@ def test_clean_and_normalize():
     assert detail.health_scores.nutriscore_grade == "E"
     assert "Çok düşük besin kalitesi" in detail.health_scores.nutriscore_description
     assert detail.health_scores.ecoscore_grade == "B"
-    print("✓ test_clean_and_normalize başarılı.")
+    assert detail.health_scores.nutriscore_breakdown is not None
+    assert detail.health_scores.nutriscore_breakdown.score == 28
+    assert detail.health_scores.ecoscore_score == 64
+
+    # Zenginleştirilmiş İçerikler ve Ek Bilgiler
+    assert len(detail.ingredients.structured) > 0
+    assert detail.ingredients.structured[0].text == "Şeker"
+    assert detail.ingredients.structured[0].percent_estimate == 38.0
+    assert detail.nutrition.added_sugars_100g == 38.0
+
+    # Ham veri dahil etme testi
+    detail_raw = ProductAnalysisService.clean_and_normalize(raw, include_raw=True)
+    assert detail_raw.raw_openfoodfacts is not None
+    assert len(detail_raw.raw_openfoodfacts.keys()) > 100
+    print("✓ test_clean_and_normalize başarılı (Tüm zenginleştirilmiş alanlar doğrulandı).")
 
 
 async def test_get_product_endpoint():

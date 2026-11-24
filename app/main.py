@@ -55,7 +55,13 @@ def health_check():
     }
 
 
-@app.get("/", include_in_schema=False)
+@app.head("/health", include_in_schema=False)
+def health_check_head():
+    """HEAD istekleri için sağlık kontrolü (Render ve izleme servisleri için)."""
+    return health_check()
+
+
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def root():
     return {
         "message": f"{settings.APP_NAME} çalışıyor. Dokümantasyon için /docs adresini ziyaret edin.",

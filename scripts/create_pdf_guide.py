@@ -244,7 +244,8 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     req_post = (
         "<b>POST</b> https://entegre-proje-backend.onrender.com/api/v1/products/analyze<br/>"
         "<b>Headers:</b> <code>Content-Type: application/json</code><br/>"
-        "<b>Body:</b> <code>{\"barcode\": \"8690504135913\"}</code>"
+        "<b>Body:</b> <code>{\"barcode\": \"8690504135913\", \"include_raw\": false}</code><br/>"
+        "<i>* include_raw: true gönderirsen Open Food Facts'in filtrelenmemiş 240+ ham alanının tamamı da 'raw_openfoodfacts' altında gelir!</i>"
     )
     t_post = Table([[Paragraph(req_post, code_style)]], colWidths=[515])
     t_post.setStyle(TableStyle([
@@ -258,6 +259,7 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     story.append(Paragraph("<b>Dönen Yanıt Durumları:</b>", body_style))
     story.append(Paragraph("• <b>200 OK (Ürün Bulundu):</b> <code>{\"success\": true, \"message\": \"...\", \"data\": { ... }}</code>", bullet_style))
     story.append(Paragraph("• <b>404 Not Found (Ürün Yok):</b> <code>{\"success\": false, \"message\": \"Bu barkoda ait ürün bulunamadı.\", \"data\": null}</code>", bullet_style))
+    story.append(Paragraph("• <b>HEAD /health:</b> Render veya uptime izleme servisleri için <code>HEAD</code> istekleri tam desteklenir.", bullet_style))
     story.append(Spacer(1, 8))
 
     story.append(PageBreak())

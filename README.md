@@ -50,16 +50,22 @@ POST /api/v1/products/analyze
 Content-Type: application/json
 
 {
-  "barcode": "8690504135913"
+  "barcode": "8690504135913",
+  "include_raw": false
 }
 ```
 
-**Canlı URL:** `https://entegre-proje-backend.onrender.com/api/v1/products/analyze`
+> **İpucu:** Eğer Open Food Facts'in 240+ ham alanının hiçbir filtreden geçmemiş orijinal halini de görmek isterseniz `"include_raw": true` gönderebilirsiniz. Bu durumda tüm orijinal veri `data.raw_openfoodfacts` altında gelecektir.
 
 #### Yanıt Durum Kodları:
 - **`200 OK`**: Ürün bulundu ve başarıyla analiz edildi (`success: true`).
 - **`404 Not Found`**: Bu barkoda ait ürün bulunamadı (`success: false`).
 - **`502 Bad Gateway`**: Dış servis (Open Food Facts) yanıt vermedi (`success: false`).
+
+---
+
+### 2. Sağlık Kontrolü (HEAD & GET)
+- **`GET /health`** ve **`HEAD /health`**: Uptime/Render servis kontrolleri için her iki HTTP metodunu da destekler.
 
 ---
 
