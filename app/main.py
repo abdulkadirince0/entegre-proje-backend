@@ -3,8 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.modules.product_analysis.router import router as product_router
+from app.modules.chat.router import router as chat_router
 
 tags_metadata = [
+    {
+        "name": "Hakkım Var (Tüketici Hakları AI Asistanı)",
+        "description": (
+            "Çoklu sağlayıcı havuzu (Gemini, Groq, OpenRouter) ve anahtar rotasyonu ile çalışan, "
+            "tüketici hakları ve uyuşmazlıkları için hafızalı (summary tabanlı) akıllı danışmanlık servisi."
+        ),
+    },
     {
         "name": "Ürün ve İçerik Analizi (Barkod Modülü)",
         "description": (
@@ -38,6 +46,7 @@ app.add_middleware(
 
 # Modüllerin Router'larını Bağla
 app.include_router(product_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
 
 
 @app.get(

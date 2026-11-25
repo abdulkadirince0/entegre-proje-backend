@@ -355,37 +355,27 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
     story.append(ui_table)
     story.append(Spacer(1, 14))
 
-    # BÖLÜM 5: FRONTEND KOD ÖRNEĞİ (DART / JAVASCRIPT)
-    story.append(Paragraph("5. Örnek Frontend Kodu (Dart / Flutter)", h1_style))
+    # BÖLÜM 5: FRONTEND KOD ÖRNEĞİ (BARKOD - DART / FLUTTER)
+    story.append(Paragraph("5. Örnek Frontend Kodu (Barkod - Dart / Flutter)", h1_style))
     sample_dart = (
-        "// Flutter / Dart POST İstek Fonksiyonu<br/>"
+        "// Flutter / Dart POST İstek Fonksiyonu (Barkod Analizi)<br/>"
         "Future&lt;void&gt; fetchProductAnalysis(String barcode) async {<br/>"
         "  final url = Uri.parse('https://entegre-proje-backend.onrender.com/api/v1/products/analyze');<br/>"
         "  final response = await http.post(<br/>"
         "    url,<br/>"
         "    headers: {'Content-Type': 'application/json'},<br/>"
-        "    body: json.encode({'barcode': barcode}),<br/>"
+        "    body: json.encode({'barcode': barcode, 'include_raw': false}),<br/>"
         "  );<br/><br/>"
         "  final jsonBody = json.decode(utf8.decode(response.bodyBytes));<br/>"
         "  if (response.statusCode == 200 &amp;&amp; jsonBody['success'] == true) {<br/>"
         "    final product = jsonBody['data'];<br/>"
         "    print('Ürün: ${product['product_name']}');<br/>"
         "    print('Nutri-Score: ${product['health_scores']['nutriscore_grade']}');<br/>"
-        "    // UI State güncelle (setState veya Riverpod/Bloc)<br/>"
         "  } else {<br/>"
-        "    // HTTP 404 veya success: false durumu<br/>"
-        "    print('Hata: ${jsonBody['message']}');<br/>"
         "    showErrorDialog(jsonBody['message'] ?? 'Ürün bulunamadı');<br/>"
         "  }<br/>"
         "}"
     )
-    dart_table = Table([[Paragraph(sample_dart, code_style)]], colWidths=[515])
-    dart_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#1A202C")),
-        ('BOX', (0,0), (-1,-1), 0.8, colors.black),
-        ('PADDING', (0,0), (-1,-1), 8),
-    ]))
-    # Kod metin rengini beyaz yap
     code_style_white = ParagraphStyle(
         "CodeWhite",
         fontName="Arial",
@@ -400,12 +390,115 @@ def build_pdf(filename="OMER_FRONTEND_ENTEGRASYON_KILAVUZU.pdf"):
         ('PADDING', (0,0), (-1,-1), 8),
     ]))
     story.append(dart_table)
+    story.append(Spacer(1, 14))
+
+    story.append(PageBreak())
+
+    # BÖLÜM 6: HAKKIM VAR TÜKETİCİ HAKLARI AI ASİSTANI (YENİ MODÜL)
+    story.append(Paragraph("6. Yeni Modül: 'Hakkım Var' Tüketici Danışmanı AI Chat", h1_style))
+    chat_intro = Paragraph(
+        "<b>Ömer'in Tasarladığı Chat & Hafıza Mimarisi:</b><br/>"
+        "Tüketici uyuşmazlıkları için sohbet hafızasını <b>'summary' (özet)</b> alanı üzerinden yöneten, "
+        "kesintisiz hizmet için <b>Çoklu Sağlayıcı Havuzu (Gemini ➔ Groq ➔ OpenRouter)</b> ve "
+        "otomatik <b>Anahtar Rotasyonu (Yönetmen)</b> kullanan AI asistan modülüdür.",
+        body_style
+    )
+    chat_box = Table([[chat_intro]], colWidths=[515])
+    chat_box.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FAF5FF")),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#E9D8FD")),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(chat_box)
     story.append(Spacer(1, 10))
+
+    story.append(Paragraph("A. Supabase Veritabanı Tabloları", h2_style))
+    story.append(Paragraph("Proje kök dizinindeki <code>supabase_schema.sql</code> dosyasını Supabase SQL editöründe çalıştırarak tabloları oluşturabilirsin:", body_style))
+    story.append(Paragraph("• <b>chats:</b> <code>id (uuid)</code>, <code>user_id</code>, <code>title</code>, <code>summary (hafıza)</code>, <code>created_at</code>, <code>updated_at</code>", bullet_style))
+    story.append(Paragraph("• <b>messages:</b> <code>id (uuid)</code>, <code>chat_id</code>, <code>role ('user'/'assistant')</code>, <code>content</code>, <code>sequence</code>", bullet_style))
+    story.append(Paragraph("• <b>ai_request_logs:</b> <code>provider</code>, <code>model</code>, <code>tokens</code>, <code>latency_ms</code>, <code>status</code>, <code>error_type</code>", bullet_style))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("B. Chat API İstek Formatı (POST)", h2_style))
+    chat_req = (
+        "<b>POST</b> https://entegre-proje-backend.onrender.com/api/v1/chat/message<br/>"
+        "<b>Headers:</b> <code>Content-Type: application/json</code><br/>"
+        "<b>Body:</b><br/>"
+        "{\n"
+        "  \"message\": \"Satıcı bozuk malı geri almıyor, haklarım neler?\",\n"
+        "  \"summary\": \"Kullanıcı 15 Kasım'da faturalı telefon almıştı.\",  // Önceki özet (ilk mesajda boş)\n"
+        "  \"image_base64\": null,  // Varsa ayıplı ürün / fatura fotoğrafı\n"
+        "  \"chat_id\": \"b2c3d4e5-f6a7-...\"\n"
+        "}"
+    )
+    t_chat = Table([[Paragraph(chat_req, code_style)]], colWidths=[515])
+    t_chat.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F0FDF4")),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#BBF7D0")),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(t_chat)
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("C. Dönen Yanıt Formatı ve Hafıza Döngüsü", h2_style))
+    chat_res = (
+        "{\n"
+        "  \"success\": true,\n"
+        "  \"response\": \"6502 sayılı Tüketici Kanunu m.11 uyarınca 4 seçimlik hakkınız vardır...\",\n"
+        "  \"summary\": \"Kullanıcı 15 Kasım'da aldığı telefonun arızası ve iade hakkı konusunda bilgilendirildi.\",\n"
+        "  \"metrics\": {\n"
+        "    \"provider\": \"gemini\",\n"
+        "    \"model\": \"gemini-2.0-flash\",\n"
+        "    \"input_tokens\": 142,\n"
+        "    \"output_tokens\": 88,\n"
+        "    \"latency_ms\": 1120.5,\n"
+        "    \"status\": \"success\"\n"
+        "  }\n"
+        "}"
+    )
+    t_res = Table([[Paragraph(chat_res, code_style)]], colWidths=[515])
+    t_res.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F8FAFC")),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor("#CBD5E0")),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(t_res)
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("<b>Döngü Kuralı:</b> Dönen <code>summary</code> değerini Supabase'deki ilgili chat kaydına kaydedip, kullanıcının bir sonraki sorusunda body'deki <code>summary</code> alanına koyarak backend'e iletmelisin. Böylece asistan sohbeti asla unutmaz!", body_style))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("D. Flutter Chat Gönderim Örneği", h2_style))
+    sample_chat_dart = (
+        "// Flutter Chat Mesaj Gönderme Örneği<br/>"
+        "Future&lt;void&gt; sendHakkimVarMessage(String userMsg, String currentSummary) async {<br/>"
+        "  final response = await http.post(<br/>"
+        "    Uri.parse('https://entegre-proje-backend.onrender.com/api/v1/chat/message'),<br/>"
+        "    headers: {'Content-Type': 'application/json'},<br/>"
+        "    body: json.encode({<br/>"
+        "      'message': userMsg,<br/>"
+        "      'summary': currentSummary,<br/>"
+        "    }),<br/>"
+        "  );<br/>"
+        "  final data = json.decode(utf8.decode(response.bodyBytes));<br/>"
+        "  if (data['success'] == true) {<br/>"
+        "    String botReply = data['response'];<br/>"
+        "    String newSummary = data['summary']; // Supabase chats.summary tablosunu güncelle!<br/>"
+        "  }<br/>"
+        "}"
+    )
+    t_cdart = Table([[Paragraph(sample_chat_dart, code_style_white)]], colWidths=[515])
+    t_cdart.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#1A202C")),
+        ('BOX', (0,0), (-1,-1), 0.8, colors.black),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(t_cdart)
+    story.append(Spacer(1, 14))
 
     # BİTİŞ & İLETİŞİM NOTU
     closing_p = Paragraph(
-        "<b>İyi çalışmalar Ömer!</b> Herhangi bir alana veya ekstra bir filtreye ihtiyaç duyarsan backend'e hemen ekleyebiliriz. "
-        "Sıradaki modülleri (Kusur Analizi, Tüketici Kanunları vb.) peyderpey entegre etmeye devam edeceğiz.",
+        "<b>İyi çalışmalar Ömer!</b> Hem barkod analizi hem de çoklu sağlayıcı rotasyonlu Hakkım Var AI asistanı hazır. "
+        "Sorunsuz şekilde test edebilirsin!",
         body_style
     )
     story.append(closing_p)
